@@ -1,5 +1,5 @@
-import {fromEvent} from 'rxjs';
-import {map, debounceTime, distinctUntilChanged, switchMap, mergeMap} from 'rxjs/operators';
+import {catchError, EMPTY, fromEvent} from 'rxjs';
+import {map, debounceTime, distinctUntilChanged, switchMap, mergeMap, tap} from 'rxjs/operators';
 import {ajax} from "rxjs/ajax";
 
 const url='https://api.github.com/search/users?q=';
@@ -11,7 +11,10 @@ const stream = fromEvent(search, 'input').pipe(
     map( event => event.target.value),
     debounceTime(1000),
     distinctUntilChanged(),
-    switchMap(value => ajax.getJSON(url + value)),
+    tap(() => result.innerHTML = ''),
+    switchMap(value => ajax.getJSON(url + value).pipe(
+        catchError(err => EMPTY)
+    )),
     map(response => response.items),
     mergeMap(items => items)
 )
